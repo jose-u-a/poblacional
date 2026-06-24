@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poblacional — Camaronera</title>
+<!-- v2.1 - 20260624225947 -->
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f0f4f0;
+    --surface: #ffffff;
+    --surface2: #f7faf7;
+    --border: #d4e0d4;
+    --border2: #b8ccb8;
+    --green: #1a6b3a;
+    --green-light: #e8f5ec;
+    --green-mid: #2d8a50;
+    --green-dark: #0f4a28;
+    --text: #1a2e1a;
+    --text2: #4a6b4a;
+    --text3: #7a9a7a;
+    --accent: #f5a623;
+    --danger: #c0392b;
+    --danger-bg: #fdf3f2;
+    --success: #1a6b3a;
+    --success-bg: #e8f5ec;
+    --radius: 10px;
+    --radius-lg: 16px;
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  header {
+    background: var(--green-dark);
+    color: white;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  header .logo {
+    width: 36px;
+    height: 36px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  header h1 { font-size: 17px; font-weight: 600; }
+  header p { font-size: 12px; opacity: 0.7; }
+
+  .main { max-width: 680px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .card-sub {
+    font-size: 13px;
+    color: var(--text3);
+    margin-bottom: 1rem;
+  }
+
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--radius);
+    padding: 2rem 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    background: var(--surface2);
+  }
+
+  .upload-zone:hover, .upload-zone.drag { background: var(--green-light); border-color: var(--green-mid); }
+
+  .upload-zone .icon { font-size: 40px; margin-bottom: 8px; }
+  .upload-zone .main-text { font-size: 15px; font-weight: 500; color: var(--text); }
+  .upload-zone .sub-text { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+  #img-preview {
+    width: 100%;
+    max-height: 220px;
+    object-fit: contain;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-top: 1rem;
+    display: none;
+  }
+
+  .status-box {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 0.75rem;
+  }
+  .status-box.loading { display: flex; background: #fff8e6; color: #7a5800; border: 1px solid #f0d080; }
+  .status-box.success { display: flex; background: var(--success-bg); color: var(--success); border: 1px solid #a8d8b8; }
+  .status-box.error { display: flex; background: var(--danger-bg); color: var(--danger); border: 1px solid #f0b8b2; }
+
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2.5px solid rgba(0,0,0,0.15);
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .fields-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .field { display: flex; flex-direction: column; gap: 4px; }
+
+  .field label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .field input {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s;
+    width: 100%;
+  }
+
+  .field input:focus {
+    outline: none;
+    border-color: var(--green-mid);
+    box-shadow: 0 0 0 3px rgba(45,138,80,0.12);
+  }
+
+  .field input.auto-filled { background: #f0faf4; border-color: #a8d8b8; }
+
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin: 1rem 0;
+  }
+
+  .group-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1rem; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border2);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--surface2); }
+  .btn:active { transform: scale(0.98); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-primary {
+    background: var(--green);
+    color: white;
+    border-color: var(--green-dark);
+  }
+  .btn-primary:hover { background: var(--green-mid); }
+
+  .btn-download {
+    background: var(--accent);
+    color: #1a1a00;
+    border-color: #d4900a;
+    font-weight: 600;
+  }
+  .btn-download:hover { background: #e09610; }
+
+  #fields-section { display: none; }
+
+  .history-wrap { display: none; }
+
+  .history-table-outer { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  .htable { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; min-width: 700px; }
+
+  .htable thead tr { background: var(--green-dark); }
+  .htable thead th { padding: 10px 12px; text-align: left; color: white; font-weight: 600; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+  .htable thead th:first-child { border-radius: 10px 0 0 0; }
+  .htable thead th:last-child { border-radius: 0 10px 0 0; }
+
+  .htable tbody tr { transition: background 0.12s; }
+  .htable tbody tr:hover td { background: var(--green-light); }
+  .htable tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text); white-space: nowrap; vertical-align: middle; }
+  .htable tbody tr:last-child td { border-bottom: none; }
+
+  .num-badge { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--green-dark); color: white; font-size: 11px; font-weight: 700; }
+
+  .raleo-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 99px; letter-spacing: 0.04em; }
+  .raleo-antes { background: #fff3cd; color: #856404; }
+  .raleo-despues { background: #d4edda; color: #155724; }
+
+  .pct-bar { display: flex; flex-direction: column; gap: 3px; min-width: 90px; }
+  .pct-label { font-size: 12px; font-weight: 600; }
+  .pct-track { height: 6px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .pct-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+
+  .nov-grid { display: flex; flex-wrap: wrap; gap: 4px; min-width: 220px; }
+  .nov-item { display: flex; flex-direction: column; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 4px 8px; min-width: 54px; }
+  .nov-name { font-size: 9px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+  .nov-val { font-size: 12px; font-weight: 700; color: var(--text); }
+
+  .bat-cell { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+  .bat-cell span { color: var(--text2); font-size: 10px; }
+  .bat-cell strong { font-size: 13px; color: var(--text); }
+
+  .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 99px;
+    background: var(--green-light);
+    color: var(--green);
+  }
+
+  .counter-bar {
+    background: var(--green-dark);
+    color: white;
+    padding: 10px 1.5rem;
+    font-size: 13px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    bottom: 0;
+    z-index: 99;
+  }
+
+  .counter-bar.visible { display: flex; }
+
+  .raleo-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .raleo-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+
+  .raleo-btn.active {
+    background: var(--green);
+    color: white;
+    border-color: var(--green-dark);
+  }
+
+  .filtro-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .filtro-label { font-size:12px; font-weight:600; color:var(--text2); white-space:nowrap; }
+  .filtro-pills { display:flex; gap:6px; flex-wrap:wrap; }
+  .filtro-pill { padding:4px 14px; border-radius:99px; border:1.5px solid var(--border2); background:var(--surface2); color:var(--text2); font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+  .filtro-pill:hover { border-color:var(--green-mid); color:var(--green); }
+  .filtro-pill.active { background:var(--green); color:white; border-color:var(--green-dark); }
+  .btn-del { background:none; border:none; cursor:pointer; color:var(--text3); font-size:14px; padding:2px 6px; border-radius:6px; transition:color 0.15s; }
+  .btn-del:hover { color:var(--danger); }
+
+  .login-screen { position:fixed; top:0; left:0; width:100%; height:100%; background:var(--green-dark); z-index:999; display:flex; align-items:center; justify-content:center; padding:1rem; }
+  .login-card { background:white; border-radius:20px; padding:2rem 1.75rem; width:100%; max-width:400px; box-shadow:0 20px 60px rgba(0,0,0,0.3); }
+  .login-logo { font-size:48px; text-align:center; margin-bottom:0.5rem; }
+  .login-title { font-size:22px; font-weight:700; color:var(--green-dark); text-align:center; margin-bottom:4px; }
+  .login-sub { font-size:13px; color:var(--text3); text-align:center; margin-bottom:1.5rem; }
+  .login-label { font-size:12px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px; display:block; }
+  .login-input { width:100%; border:1.5px solid var(--border); border-radius:10px; padding:10px 14px; font-size:14px; font-family:'Inter',sans-serif; color:var(--text); margin-bottom:1rem; }
+  .login-input:focus { outline:none; border-color:var(--green-mid); box-shadow:0 0 0 3px rgba(45,138,80,0.12); }
+  .login-btn { width:100%; padding:12px; background:var(--green); color:white; border:none; border-radius:10px; font-size:15px; font-weight:600; font-family:'Inter',sans-serif; cursor:pointer; transition:background 0.15s; }
+  .login-btn:hover { background:var(--green-mid); }
+  .login-hint { font-size:11px; color:var(--text3); text-align:center; margin-top:1rem; line-height:1.5; }
+  .login-hint a { color:var(--green); }
+  .login-error { font-size:12px; color:var(--danger); text-align:center; margin-bottom:0.75rem; display:none; }
+  .user-pill { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.15); border-radius:99px; padding:4px 12px 4px 6px; cursor:pointer; }
+  .user-pill span { font-size:12px; color:white; }
+  .user-dot { width:8px; height:8px; border-radius:50%; background:#4ade80; }
+
+  @media (max-width: 480px) {
+    .fields-grid { grid-template-columns: 1fr 1fr; }
+    .actions { flex-direction: column; }
+    .btn { width: 100%; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Pantalla de inicio / login -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🦐</div>
+    <p class="login-title">Poblacional</p>
+    <p class="login-sub">Ingresa tu clave de OpenRouter para comenzar</p>
+    <label class="login-label">Tu clave API</label>
+    <input class="login-input" id="login-key" type="password" placeholder="sk-or-v1-..." onkeydown="if(event.key==='Enter') iniciarSesion()">
+    <p class="login-error" id="login-error">Clave inválida — debe empezar con sk-or-</p>
+    <button class="login-btn" onclick="iniciarSesion()">Entrar</button>
+    <p class="login-hint">
+      ¿No tienes clave? Créala gratis en<br>
+      <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a>
+    </p>
+  </div>
+</div>
+
+<header>
+  <div class="logo">🦐</div>
+  <div style="flex:1;">
+    <h1>Poblacional</h1>
+    <p>Llenado automático desde foto</p>
+  </div>
+  <div class="user-pill" id="user-pill" onclick="cerrarSesion()" title="Cerrar sesión" style="display:none;">
+    <div class="user-dot"></div>
+    <span id="user-label">Conectado</span>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- Subir foto -->
+  <div class="card">
+    <p class="card-title">📷 Sube la foto de WhatsApp</p>
+    <p class="card-sub">La IA extrae todos los datos automáticamente.</p>
+
+    <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="icon">📂</div>
+      <div class="main-text">Toca para elegir la foto</div>
+      <div class="sub-text">O arrastra aquí — JPG, PNG, captura de pantalla</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none">
+
+    <img id="img-preview" alt="Vista previa de la imagen subida">
+
+    <div class="status-box" id="status-box">
+      <span class="spinner" id="status-spinner"></span>
+      <span id="status-text"></span>
+    </div>
+  </div>
+
+  <!-- Campos extraídos -->
+  <div class="card" id="fields-section">
+    <p class="card-title">✏️ Revisa y corrige los datos</p>
+    <p class="card-sub">La IA llenó los campos — edita lo que necesites antes de guardar.</p>
+
+    <div class="group-title">📋 Información general</div>
+    <div class="fields-grid">
+      <div class="field"><label>Fecha</label><input id="f-fecha" placeholder="15/06/2026"></div>
+      <div class="field"><label>Piscina #</label><input id="f-piscina" placeholder="29"></div>
+      <div class="field"><label>Camaronera</label><input id="f-camaronera" placeholder="Recorcholis 2"></div>
+      <div class="field"><label>Lances</label><input id="f-lances" placeholder="14"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="group-title">👷 Técnicos</div>
+    <div class="fields-grid">
+      <div class="field"><label>Técnico 1</label><input id="f-tec1" placeholder="Nombre"></div>
+      <div class="field"><label>Técnico 2</label><input id="f-tec2" placeholder="Nombre"></div>
+      <div class="field"><label>Técnico 3</label><input id="f-tec3" placeholder="Nombre (opcional)"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="group-title">🔄 Momento del raleo</div>
+    <div class="raleo-toggle">
+      <button class="raleo-btn active" id="btn-antes" onclick="setRaleo('ANTES')">Antes del raleo</button>
+      <button class="raleo-btn" id="btn-despues" onclick="setRaleo('DESPUES')">Después del raleo</button>
+    </div>
+    <input type="hidden" id="f-raleo" value="ANTES">
+
+    <div class="divider"></div>
+    <div class="group-title">📊 Sobrevivencia</div>
+    <div class="fields-grid">
+      <div class="field"><label>Sobrevivencia %</label><input id="f-sobrevivencia" placeholder="36.48"></div>
+      <div class="field"><label>Total Camarones</label><input id="f-total" placeholder="1595"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="group-title">⚠️ Novedades</div>
+    <div class="fields-grid">
+      <div class="field"><label>Camarón Rojo</label><input id="f-rojo" placeholder="19"></div>
+      <div class="field"><label>Flácido</label><input id="f-flacido" placeholder="17"></div>
+      <div class="field"><label>Color T</label><input id="f-colort" placeholder="19"></div>
+      <div class="field"><label>Enanos</label><input id="f-enanos" placeholder="100"></div>
+      <div class="field"><label>Desechos</label><input id="f-desechos" placeholder="18"></div>
+      <div class="field"><label>Vacíos</label><input id="f-vacios" placeholder="100"></div>
+      <div class="field"><label>MF (muerto fresco)</label><input id="f-mf" placeholder="8"></div>
+      <div class="field"><label>Muerto Viejo</label><input id="f-mviejo" placeholder="5"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="group-title">🌊 Batimetría y compuertas</div>
+    <div class="fields-grid">
+      <div class="field"><label>Prom. Batimetría</label><input id="f-batimetria" placeholder="116.43"></div>
+      <div class="field"><label>Compuerta Pobl.</label><input id="f-ncp" placeholder="260"></div>
+      <div class="field"><label>Compuerta Max.</label><input id="f-ncm" placeholder="280"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="agregarFila()">💾 Guardar fila</button>
+      <button class="btn" onclick="limpiar()">✕ Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Historial sesión actual -->
+  <div class="card history-wrap" id="history-section">
+    <p class="card-title">📋 Registros de esta sesión</p>
+    <p class="card-sub">Agrega todas las fotos que necesites y luego descarga el archivo.</p>
+    <div class="history-table-outer">
+      <table class="htable">
+        <thead>
+          <tr>
+            <th>#</th><th>Fecha</th><th>Piscina</th><th>Camaronera</th>
+            <th>Raleo</th><th>Técnicos</th><th>Sobrevivencia</th>
+            <th>Novedades</th><th>Batimetría</th>
+          </tr>
+        </thead>
+        <tbody id="history-body"></tbody>
+      </table>
+    </div>
+    <div class="actions" style="margin-top:1rem;">
+      <button class="btn btn-download" onclick="descargarCSV()">⬇️ Descargar Excel (CSV)</button>
+      <button class="btn" onclick="nuevaFoto()">📷 Agregar otra foto</button>
+    </div>
+  </div>
+
+  <!-- Historial permanente -->
+  <div class="card" id="historial-permanente">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:1rem;">
+      <div>
+        <p class="card-title">🗂️ Historial completo por piscina</p>
+        <p class="card-sub" style="margin:0;">Se guarda aunque cierres la aplicación.</p>
+      </div>
+      <button class="btn" style="color:var(--danger);border-color:var(--danger);" onclick="confirmarBorrarTodo()">🗑️ Borrar todo</button>
+    </div>
+
+    <div class="filtro-bar">
+      <label class="filtro-label">Filtrar por piscina:</label>
+      <div class="filtro-pills" id="filtro-pills"></div>
+    </div>
+
+    <div class="history-table-outer" style="margin-top:1rem;">
+      <table class="htable">
+        <thead>
+          <tr>
+            <th>#</th><th>Fecha</th><th>Piscina</th><th>Camaronera</th>
+            <th>Raleo</th><th>Técnicos</th><th>Sobrevivencia</th>
+            <th>Novedades</th><th>Batimetría</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="historial-body"></tbody>
+      </table>
+    </div>
+    <p id="historial-vacio" style="text-align:center;color:var(--text3);font-size:13px;padding:2rem 0;display:none;">Aún no hay registros guardados.</p>
+  </div>
+
+</div>
+
+<!-- Barra inferior flotante -->
+<div class="counter-bar" id="counter-bar">
+  <span id="counter-text">0 registros guardados</span>
+  <button class="btn btn-download" style="padding:6px 14px; font-size:13px;" onclick="descargarCSV()">⬇️ Descargar</button>
+</div>
+
+<script>
+  let excelRows = [];
+  let imgBase64 = null;
+  let filtroPiscina = 'TODAS';
+
+  // ---- Login / sesión ----
+  function iniciarSesion() {
+    const key = document.getElementById('login-key').value.trim();
+    if (!key.startsWith('sk-or-')) {
+      document.getElementById('login-error').style.display = 'block';
+      return;
+    }
+    localStorage.setItem('poblacional_key', key);
+    mostrarApp(key);
+  }
+
+  function mostrarApp(key) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('user-pill').style.display = 'flex';
+    const short = key.slice(0,14) + '...';
+    document.getElementById('user-label').textContent = short;
+  }
+
+  function cerrarSesion() {
+    if (confirm('¿Cerrar sesión? Se borrará tu clave guardada.')) {
+      localStorage.removeItem('poblacional_key');
+      document.getElementById('login-screen').style.display = 'flex';
+      document.getElementById('login-key').value = '';
+      document.getElementById('user-pill').style.display = 'none';
+    }
+  }
+
+  function getKey() {
+    return localStorage.getItem('poblacional_key') || '';
+  }
+
+  // Verificar si ya hay clave guardada
+  (function() {
+    const saved = localStorage.getItem('poblacional_key');
+    if (saved && saved.startsWith('sk-or-')) mostrarApp(saved);
+  })();
+
+  // ---- Historial permanente (localStorage) ----
+  function cargarHistorial() {
+    try { return JSON.parse(localStorage.getItem('poblacional_historial') || '[]'); }
+    catch(e) { return []; }
+  }
+  function guardarHistorial(data) {
+    localStorage.setItem('poblacional_historial', JSON.stringify(data));
+  }
+  function agregarAlHistorial(row) {
+    const hist = cargarHistorial();
+    hist.unshift({ ...row, id: Date.now() });
+    guardarHistorial(hist);
+    renderHistorialPermanente();
+  }
+  function eliminarDelHistorial(id) {
+    const hist = cargarHistorial().filter(r => r.id !== id);
+    guardarHistorial(hist);
+    renderHistorialPermanente();
+  }
+  function confirmarBorrarTodo() {
+    if (confirm('¿Seguro que quieres borrar TODO el historial? Esta acción no se puede deshacer.')) {
+      localStorage.removeItem('poblacional_historial');
+      renderHistorialPermanente();
+    }
+  }
+  function renderHistorialPermanente() {
+    const hist = cargarHistorial();
+    const vacio = document.getElementById('historial-vacio');
+    const tbody = document.getElementById('historial-body');
+
+    const piscinas = ['TODAS', ...new Set(hist.map(r => r.piscina).filter(Boolean))];
+    document.getElementById('filtro-pills').innerHTML = piscinas.map(p =>
+      `<button class="filtro-pill ${filtroPiscina===p?'active':''}" onclick="setFiltroPiscina('${p}')">${p==='TODAS'?'Todas':('Piscina '+p)}</button>`
+    ).join('');
+
+    const filtrados = filtroPiscina === 'TODAS' ? hist : hist.filter(r => r.piscina === filtroPiscina);
+
+    if (filtrados.length === 0) {
+      tbody.innerHTML = '';
+      vacio.style.display = 'block';
+      return;
+    }
+    vacio.style.display = 'none';
+    tbody.innerHTML = filtrados.map((r, i) => buildRow(r, i, true)).join('');
+  }
+  function setFiltroPiscina(p) {
+    filtroPiscina = p;
+    renderHistorialPermanente();
+  }
+
+  // ---- Drag & Drop ----
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+  dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); const f = e.dataTransfer.files[0]; if (f) processImage(f); });
+
+  document.getElementById('file-input').addEventListener('change', e => {
+    if (e.target.files[0]) processImage(e.target.files[0]);
+  });
+
+  function processImage(file) {
+    const reader = new FileReader();
+    reader.onload = async e => {
+      const dataUrl = e.target.result;
+
+      const preview = document.getElementById('img-preview');
+      preview.src = dataUrl;
+      preview.style.display = 'block';
+      document.getElementById('fields-section').style.display = 'none';
+      setStatus('loading', 'Preparando imagen...');
+
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 1600;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const jpegBase64 = canvas.toDataURL('image/jpeg', 0.90).split(',')[1];
+        imgBase64 = jpegBase64;
+        setStatus('loading', 'Analizando imagen con IA...');
+        await extractData(jpegBase64, 'image/jpeg');
+      };
+      img.onerror = () => setStatus('error', '✗ No se pudo leer la imagen. Prueba con otra foto.');
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Orden de preferencia de modelos: primero los mejores para visión
+  const MODELOS_PREFERIDOS = [
+    "google/gemini-flash-1.5",
+    "google/gemini-flash-1.5-8b",
+    "meta-llama/llama-4-maverick:free",
+    "meta-llama/llama-4-scout:free",
+    "qwen/qwen2.5-vl-72b-instruct:free",
+    "qwen/qwen2-vl-7b-instruct:free"
+  ];
+
+  async function getModelosVision() {
+    try {
+      const r = await fetch("https://openrouter.ai/api/v1/models", {
+        headers: { "Authorization": `Bearer ${getKey()}` }
+      });
+      const data = await r.json();
+      const todosVision = (data.data || [])
+        .filter(m => {
+          const mods = m.architecture?.input_modalities || [];
+          return Array.isArray(mods) && mods.includes('image');
+        })
+        .map(m => m.id);
+
+      // Primero intentar los preferidos que estén disponibles
+      const disponiblesPreferidos = MODELOS_PREFERIDOS.filter(m => todosVision.includes(m));
+      // Luego agregar los gratuitos restantes como fallback
+      const gratisRestantes = todosVision.filter(m => m.endsWith(':free') && !disponiblesPreferidos.includes(m));
+      const lista = [...disponiblesPreferidos, ...gratisRestantes];
+
+      console.log('Modelos visión disponibles:', lista);
+      return lista.length > 0 ? lista : ["meta-llama/llama-4-maverick:free", "meta-llama/llama-4-scout:free"];
+    } catch(e) {
+      return ["meta-llama/llama-4-maverick:free", "meta-llama/llama-4-scout:free"];
+    }
+  }
+
+  // ---- PROMPT MEJORADO ----
+  function buildPrompt() {
+    return `Eres un experto en leer reportes de camaroneras ecuatorianas. Analiza esta imagen de un reporte de poblacional (muestreo de camarones en piscinas) y extrae TODOS los datos visibles con máxima precisión.
+
+REGLAS ESTRICTAS:
+1. Responde ÚNICAMENTE con JSON puro, sin markdown, sin backticks, sin explicaciones.
+2. Si un dato no está visible en la imagen, deja el campo como string vacío "".
+3. NUNCA inventes datos. Si no lo ves claramente, déjalo vacío.
+4. Los valores numéricos deben ser solo el número, sin unidades, sin %, sin comas de miles.
+5. Para decimales usa punto (.) no coma (,). Ejemplo: 36.48 no 36,48.
+
+GUÍA DE CAMPOS:
+- "fecha": Fecha del reporte en formato DD/MM/AAAA. Busca etiquetas como "Fecha:", "Date:". Ejemplo: "18/06/2026"
+- "piscina": Solo el NÚMERO de la piscina. Busca "Piscina #", "Piscina N°", "P-". Ejemplo: "29"
+- "camaronera": Nombre de la finca o camaronera. Busca encabezados, títulos o etiquetas "Camaronera:", "Finca:". Ejemplo: "RECORCHOLIS 2"
+- "tecnico1": Nombre completo del primer técnico o persona responsable. Busca "Técnico:", "Realizado por:", "Responsable:".
+- "tecnico2": Nombre del segundo técnico si hay más de uno.
+- "tecnico3": Nombre del tercer técnico si hay un tercero.
+- "lances": Número total de lances realizados. Busca "Lances:", "N° Lances", "Nº de lances". Solo el número. Ejemplo: "14"
+- "sobrevivencia": Porcentaje de sobrevivencia. Busca "Sobrevivencia %", "% Sobrevivencia", "Survival". Solo el número sin %. Ejemplo: "36.48"
+- "total_camarones": Total de camarones contados en todos los lances. Busca "Total Camarón", "Camarón Total", "Total". Ejemplo: "1309"
+- "camaron_rojo": Cantidad de camarones rojos (novedad). Busca "Cam. Rojo", "Rojo", "Rj". Solo el número entero.
+- "flacido": Cantidad de camarones flácidos. Busca "Flácido", "Flac", "Fl". Solo el número entero.
+- "color_t": Cantidad con coloración anormal tipo T. Busca "Color T", "Col T", "CT". Solo el número entero.
+- "enanos": Cantidad de camarones enanos o pequeños. Busca "Enano", "En". Solo el número entero.
+- "desechos": Cantidad de desechos. Busca "Desecho", "Des". Solo el número entero.
+- "vacios": Cantidad de camarones vacíos (sin contenido intestinal). Busca "Vacío", "Vac". Solo el número entero.
+- "mf_muerto_fresco": Cantidad de muertos frescos. Busca "M.Fresco", "MF", "Muerto Fresco". Solo el número entero.
+- "muerto_viejo": Cantidad de muertos viejos o descompuestos. Busca "M.Viejo", "MV", "Muerto Viejo". Solo el número entero.
+- "promedio_batimetria": Promedio de profundidad de la piscina en cm. Busca "Prom. Batimetría", "Batimetría prom", "Bat.". Ejemplo: "116.43"
+- "nivel_compuerta_poblacion": Nivel de compuerta poblacional en cm. Busca "Comp. Pob.", "N.C.P.", "Compuerta Pobl.". Ejemplo: "260"
+- "nivel_compuerta_maximo": Nivel de compuerta máximo en cm. Busca "Comp. Max.", "N.C.M.", "Compuerta Max.". Ejemplo: "280"
+
+Responde SOLO con este JSON exacto:
+{
+  "fecha": "",
+  "piscina": "",
+  "camaronera": "",
+  "tecnico1": "",
+  "tecnico2": "",
+  "tecnico3": "",
+  "lances": "",
+  "sobrevivencia": "",
+  "total_camarones": "",
+  "camaron_rojo": "",
+  "flacido": "",
+  "color_t": "",
+  "enanos": "",
+  "desechos": "",
+  "vacios": "",
+  "mf_muerto_fresco": "",
+  "muerto_viejo": "",
+  "promedio_batimetria": "",
+  "nivel_compuerta_poblacion": "",
+  "nivel_compuerta_maximo": ""
+}`;
+  }
+
+  async function extractData(base64, mediaType) {
+    try {
+      setStatus('loading', 'Buscando mejor modelo disponible...');
+      const MODELOS = await getModelosVision();
+      setStatus('loading', `Analizando imagen...`);
+
+      const prompt = buildPrompt();
+      let response, lastError;
+
+      for (const modelo of MODELOS) {
+        try {
+          setStatus('loading', `Leyendo imagen con ${modelo.split('/')[1] || modelo}...`);
+          response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${getKey()}`,
+              "HTTP-Referer": window.location.href,
+              "X-Title": "Poblacional Camaronera"
+            },
+            body: JSON.stringify({
+              model: modelo,
+              max_tokens: 1200,
+              temperature: 0.1,
+              messages: [{
+                role: "user",
+                content: [
+                  { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64}`, detail: "high" } },
+                  { type: "text", text: prompt }
+                ]
+              }]
+            })
+          });
+
+          const data = await response.json();
+          if (data.error) {
+            lastError = `[${modelo}]: ${data.error.message}`;
+            console.warn('Error modelo', modelo, data.error.message);
+            continue;
+          }
+
+          const text = data.choices?.[0]?.message?.content || "";
+          // Limpiar posibles backticks o prefijos
+          const clean = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').replace(/^[^{]*/, '').replace(/[^}]*$/, '').trim();
+
+          let parsed;
+          try {
+            parsed = JSON.parse(clean);
+          } catch(parseErr) {
+            // Intentar extraer JSON con regex
+            const match = text.match(/\{[\s\S]*\}/);
+            if (match) parsed = JSON.parse(match[0]);
+            else { lastError = `JSON inválido de ${modelo}`; continue; }
+          }
+
+          // Normalizar: reemplazar comas decimales por puntos en campos numéricos
+          const camposNumericos = ['sobrevivencia','total_camarones','camaron_rojo','flacido','color_t','enanos','desechos','vacios','mf_muerto_fresco','muerto_viejo','promedio_batimetria','nivel_compuerta_poblacion','nivel_compuerta_maximo','lances'];
+          camposNumericos.forEach(k => {
+            if (parsed[k]) parsed[k] = String(parsed[k]).replace(',', '.').replace(/[^\d.]/g, '');
+          });
+
+          // Llenar campos del formulario
+          const map = {
+            'f-fecha': parsed.fecha,
+            'f-piscina': parsed.piscina,
+            'f-camaronera': parsed.camaronera,
+            'f-tec1': parsed.tecnico1,
+            'f-tec2': parsed.tecnico2,
+            'f-tec3': parsed.tecnico3,
+            'f-lances': parsed.lances,
+            'f-sobrevivencia': parsed.sobrevivencia,
+            'f-total': parsed.total_camarones,
+            'f-rojo': parsed.camaron_rojo,
+            'f-flacido': parsed.flacido,
+            'f-colort': parsed.color_t,
+            'f-enanos': parsed.enanos,
+            'f-desechos': parsed.desechos,
+            'f-vacios': parsed.vacios,
+            'f-mf': parsed.mf_muerto_fresco,
+            'f-mviejo': parsed.muerto_viejo,
+            'f-batimetria': parsed.promedio_batimetria,
+            'f-ncp': parsed.nivel_compuerta_poblacion,
+            'f-ncm': parsed.nivel_compuerta_maximo,
+          };
+
+          Object.entries(map).forEach(([id, val]) => {
+            const el = document.getElementById(id);
+            if (el) { el.value = val || ''; if (val) el.classList.add('auto-filled'); }
+          });
+
+          const camposLlenos = Object.values(parsed).filter(v => v && v !== '').length;
+          document.getElementById('fields-section').style.display = 'block';
+          setStatus('success', `✓ Datos extraídos (${camposLlenos} campos encontrados) — revisa y corrige si hace falta.`);
+          return;
+
+        } catch(e) {
+          lastError = e.message;
+          console.warn('Excepción modelo', modelo, e);
+        }
+      }
+
+      throw new Error(lastError || 'No se pudo conectar con ningún modelo de visión.');
+
+    } catch (err) {
+      setStatus('error', '✗ Error: ' + err.message);
+      console.error(err);
+    }
+  }
+
+  function setStatus(type, msg) {
+    const box = document.getElementById('status-box');
+    const spinner = document.getElementById('status-spinner');
+    const text = document.getElementById('status-text');
+    box.className = 'status-box ' + type;
+    spinner.style.display = type === 'loading' ? 'block' : 'none';
+    text.textContent = msg;
+  }
+
+  function setRaleo(val) {
+    document.getElementById('f-raleo').value = val;
+    document.getElementById('btn-antes').classList.toggle('active', val === 'ANTES');
+    document.getElementById('btn-despues').classList.toggle('active', val === 'DESPUES');
+  }
+
+  function agregarFila() {
+    const row = {
+      fecha: v('f-fecha'),
+      piscina: v('f-piscina'),
+      camaronera: v('f-camaronera'),
+      lances: v('f-lances'),
+      tec1: v('f-tec1'),
+      tec2: v('f-tec2'),
+      tec3: v('f-tec3'),
+      raleo: document.getElementById('f-raleo').value,
+      sobrevivencia: v('f-sobrevivencia'),
+      total: v('f-total'),
+      rojo: v('f-rojo'),
+      flacido: v('f-flacido'),
+      colort: v('f-colort'),
+      enanos: v('f-enanos'),
+      desechos: v('f-desechos'),
+      vacios: v('f-vacios'),
+      mf: v('f-mf'),
+      mviejo: v('f-mviejo'),
+      batimetria: v('f-batimetria'),
+      ncp: v('f-ncp'),
+      ncm: v('f-ncm'),
+    };
+
+    excelRows.push(row);
+    agregarAlHistorial(row);
+    actualizarHistorial();
+    limpiar();
+    setStatus('success', `✓ Fila guardada. Total: ${excelRows.length} registro(s).`);
+    actualizarContador();
+  }
+
+  function v(id) { return (document.getElementById(id)?.value || '').trim(); }
+
+  function pctColor(val) {
+    const n = parseFloat(val) || 0;
+    if (n >= 60) return '#1a6b3a';
+    if (n >= 35) return '#f5a623';
+    return '#c0392b';
+  }
+
+  function novItem(label, val, totalCam) {
+    if (!val || val === '0' || val === '') return '';
+    const n = parseFloat(val) || 0;
+    const t = parseFloat(totalCam) || 0;
+    const pct = t > 0 ? ((n / t) * 100).toFixed(2) : '—';
+    return `<div class="nov-item"><span class="nov-name">${label}</span><span class="nov-val">${pct}${t>0?'%':''}</span></div>`;
+  }
+
+  function buildRow(r, i, conBotonEliminar = false) {
+    const sobPct = parseFloat(r.sobrevivencia) || 0;
+    const sobColor = pctColor(sobPct);
+    const tecnicos = [r.tec1, r.tec2, r.tec3].filter(Boolean).join('<br>');
+    const totalCam = parseFloat(r.total) || 0;
+    const novedades = `<div class="nov-grid">
+      ${novItem('Rojo', r.rojo, totalCam)}${novItem('Flácido', r.flacido, totalCam)}
+      ${novItem('Color T', r.colort, totalCam)}${novItem('Enanos', r.enanos, totalCam)}
+      ${novItem('Desechos', r.desechos, totalCam)}${novItem('Vacíos', r.vacios, totalCam)}
+      ${novItem('MF', r.mf, totalCam)}${novItem('M.Viejo', r.mviejo, totalCam)}
+    </div>`;
+    const tieneNov = [r.rojo,r.flacido,r.colort,r.enanos,r.desechos,r.vacios,r.mf,r.mviejo].some(v=>v&&v!='0');
+    const elimBtn = conBotonEliminar ? `<td><button class="btn-del" onclick="eliminarDelHistorial(${r.id})" title="Eliminar">✕</button></td>` : '';
+    return `<tr>
+      <td><span class="num-badge">${i + 1}</span></td>
+      <td><strong>${r.fecha}</strong></td>
+      <td style="font-weight:600;">${r.piscina}</td>
+      <td>${r.camaronera}</td>
+      <td><span class="raleo-pill ${r.raleo==='ANTES'?'raleo-antes':'raleo-despues'}">${r.raleo}</span></td>
+      <td style="font-size:11px;line-height:1.6;">${tecnicos||'—'}</td>
+      <td><div class="pct-bar"><span class="pct-label" style="color:${sobColor}">${sobPct}%</span>
+        <div class="pct-track"><div class="pct-fill" style="width:${Math.min(sobPct,100)}%;background:${sobColor}"></div></div>
+      </div></td>
+      <td>${tieneNov && totalCam > 0 ? novedades : '<span style="color:var(--text3);font-size:11px;">—</span>'}</td>
+      <td><div class="bat-cell">
+        <div><span>Prom: </span><strong>${r.batimetria||'—'}</strong></div>
+        <div><span>C.Pob: </span><strong>${r.ncp||'—'}</strong></div>
+        <div><span>C.Max: </span><strong>${r.ncm||'—'}</strong></div>
+      </div></td>
+      ${elimBtn}
+    </tr>`;
+  }
+
+  function actualizarHistorial() {
+    const section = document.getElementById('history-section');
+    section.style.display = 'block';
+    section.classList.add('history-wrap');
+    document.getElementById('history-body').innerHTML = excelRows.map((r,i) => buildRow(r,i,false)).join('');
+  }
+
+  function actualizarContador() {
+    const bar = document.getElementById('counter-bar');
+    const text = document.getElementById('counter-text');
+    if (excelRows.length > 0) {
+      bar.classList.add('visible');
+      text.textContent = `${excelRows.length} registro${excelRows.length > 1 ? 's' : ''} guardado${excelRows.length > 1 ? 's' : ''}`;
+    } else {
+      bar.classList.remove('visible');
+    }
+  }
+
+  function descargarCSV() {
+    if (excelRows.length === 0) { alert('No hay registros para descargar.'); return; }
+
+    const SEP = ';';
+    const headers = ['FECHA','PISCINA','CAMARONERA','LANCES','TECNICO 1','TECNICO 2','TECNICO 3','RALEO','SOBREVIVENCIA %','TOTAL CAMARONES','CAM ROJO','FLACIDO','COLOR T','ENANOS','DESECHOS','VACIOS','MF','M VIEJO','BATIMETRIA','NIV COMPUERTA POB','NIV COMPUERTA MAX'];
+
+    const rows = excelRows.map(r => [
+      r.fecha, r.piscina, r.camaronera, r.lances,
+      r.tec1, r.tec2, r.tec3, r.raleo,
+      r.sobrevivencia, r.total,
+      r.rojo, r.flacido, r.colort, r.enanos, r.desechos,
+      r.vacios, r.mf, r.mviejo, r.batimetria, r.ncp, r.ncm
+    ].map(val => `"${(val||'').replace(/"/g,'""')}"`).join(SEP));
+
+    const csv = 'sep=;\n' + '\uFEFF' + headers.join(SEP) + '\n' + rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `POBLACIONAL_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function limpiar() {
+    ['f-fecha','f-piscina','f-camaronera','f-lances','f-tec1','f-tec2','f-tec3','f-total','f-sobrevivencia','f-rojo','f-flacido','f-colort','f-enanos','f-desechos','f-vacios','f-mf','f-mviejo','f-batimetria','f-ncp','f-ncm']
+      .forEach(id => { const el = document.getElementById(id); if (el) { el.value = ''; el.classList.remove('auto-filled'); } });
+    document.getElementById('fields-section').style.display = 'none';
+    document.getElementById('img-preview').style.display = 'none';
+    document.getElementById('img-preview').src = '';
+    document.getElementById('status-box').className = 'status-box';
+    setRaleo('ANTES');
+  }
+
+  function nuevaFoto() {
+    limpiar();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  renderHistorialPermanente();
+</script>
+</body>
+</html>
