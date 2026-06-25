@@ -4,7 +4,42 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Poblacional — Camaronera</title>
-<!-- v2.1 - 20260624225947 -->
+<!-- v3.0 - Firebase sync -->
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAyF_SHUMMLsFUcDNpucA7uQ8PEQhL7D_w",
+    authDomain: "poblacional-c37fd.firebaseapp.com",
+    projectId: "poblacional-c37fd",
+    storageBucket: "poblacional-c37fd.firebasestorage.app",
+    messagingSenderId: "946906987888",
+    appId: "1:946906987888:web:363ab6518a3de816b123b5"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window._db = db;
+  window._fsCollection = collection(db, 'registros');
+  window._addDoc = addDoc;
+  window._deleteDoc = deleteDoc;
+  window._doc = doc;
+  window._onSnapshot = onSnapshot;
+  window._query = query;
+  window._orderBy = orderBy;
+  window._fsReady = true;
+
+  // Escuchar cambios en tiempo real
+  const q = query(collection(db, 'registros'), orderBy('timestamp', 'desc'));
+  onSnapshot(q, (snapshot) => {
+    const registros = [];
+    snapshot.forEach(d => registros.push({ ...d.data(), _fsId: d.id }));
+    window._registrosFS = registros;
+    if (typeof window.renderHistorialFS === 'function') window.renderHistorialFS(registros);
+  });
+</script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
@@ -508,7 +543,13 @@
         <p class="card-title">🗂️ Historial completo por piscina</p>
         <p class="card-sub" style="margin:0;">Se guarda aunque cierres la aplicación.</p>
       </div>
-      <button class="btn" style="color:var(--danger);border-color:var(--danger);" onclick="confirmarBorrarTodo()">🗑️ Borrar todo</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <label class="btn" style="cursor:pointer;" title="Importar registros desde CSV">
+          📥 Importar CSV
+          <input type="file" accept=".csv" style="display:none;" onchange="importarCSV(event)">
+        </label>
+        <button class="btn" style="color:var(--danger);border-color:var(--danger);" onclick="confirmarBorrarTodo()">🗑️ Borrar todo</button>
+      </div>
     </div>
 
     <div class="filtro-bar">
@@ -581,42 +622,40 @@
     if (saved && saved.startsWith('sk-or-')) mostrarApp(saved);
   })();
 
-  // ---- Historial permanente (localStorage) ----
-  function cargarHistorial() {
-    try { return JSON.parse(localStorage.getItem('poblacional_historial') || '[]'); }
-    catch(e) { return []; }
+  // ---- Historial Firebase (tiempo real, compartido) ----
+  async function agregarAlHistorial(row) {
+    if (!window._fsReady) { alert('Conectando a la base de datos, intenta de nuevo.'); return; }
+    try {
+      await window._addDoc(window._fsCollection, { ...row, timestamp: Date.now() });
+    } catch(e) { console.error('Error guardando en Firebase:', e); alert('Error al guardar: ' + e.message); }
   }
-  function guardarHistorial(data) {
-    localStorage.setItem('poblacional_historial', JSON.stringify(data));
+
+  async function eliminarDelHistorial(fsId) {
+    if (!window._fsReady) return;
+    if (!confirm('¿Eliminar este registro?')) return;
+    try {
+      await window._deleteDoc(window._doc(window._db, 'registros', fsId));
+    } catch(e) { console.error('Error eliminando:', e); }
   }
-  function agregarAlHistorial(row) {
-    const hist = cargarHistorial();
-    hist.unshift({ ...row, id: Date.now() });
-    guardarHistorial(hist);
-    renderHistorialPermanente();
-  }
-  function eliminarDelHistorial(id) {
-    const hist = cargarHistorial().filter(r => r.id !== id);
-    guardarHistorial(hist);
-    renderHistorialPermanente();
-  }
-  function confirmarBorrarTodo() {
-    if (confirm('¿Seguro que quieres borrar TODO el historial? Esta acción no se puede deshacer.')) {
-      localStorage.removeItem('poblacional_historial');
-      renderHistorialPermanente();
+
+  async function confirmarBorrarTodo() {
+    if (!confirm('¿Seguro que quieres borrar TODO el historial? Esta acción no se puede deshacer.')) return;
+    const registros = window._registrosFS || [];
+    for (const r of registros) {
+      try { await window._deleteDoc(window._doc(window._db, 'registros', r._fsId)); } catch(e) {}
     }
   }
-  function renderHistorialPermanente() {
-    const hist = cargarHistorial();
+
+  window.renderHistorialFS = function(registros) {
     const vacio = document.getElementById('historial-vacio');
     const tbody = document.getElementById('historial-body');
 
-    const piscinas = ['TODAS', ...new Set(hist.map(r => r.piscina).filter(Boolean))];
+    const piscinas = ['TODAS', ...new Set(registros.map(r => r.piscina).filter(Boolean))];
     document.getElementById('filtro-pills').innerHTML = piscinas.map(p =>
       `<button class="filtro-pill ${filtroPiscina===p?'active':''}" onclick="setFiltroPiscina('${p}')">${p==='TODAS'?'Todas':('Piscina '+p)}</button>`
     ).join('');
 
-    const filtrados = filtroPiscina === 'TODAS' ? hist : hist.filter(r => r.piscina === filtroPiscina);
+    const filtrados = filtroPiscina === 'TODAS' ? registros : registros.filter(r => r.piscina === filtroPiscina);
 
     if (filtrados.length === 0) {
       tbody.innerHTML = '';
@@ -625,7 +664,22 @@
     }
     vacio.style.display = 'none';
     tbody.innerHTML = filtrados.map((r, i) => buildRow(r, i, true)).join('');
+
+    // Actualizar contador
+    const bar = document.getElementById('counter-bar');
+    const text = document.getElementById('counter-text');
+    if (registros.length > 0) {
+      bar.classList.add('visible');
+      text.textContent = `${registros.length} registro${registros.length > 1 ? 's' : ''} en la nube ☁️`;
+    } else {
+      bar.classList.remove('visible');
+    }
   }
+
+  function renderHistorialPermanente() {
+    window.renderHistorialFS(window._registrosFS || []);
+  }
+
   function setFiltroPiscina(p) {
     filtroPiscina = p;
     renderHistorialPermanente();
@@ -955,7 +1009,7 @@ Responde SOLO con este JSON exacto:
       ${novItem('MF', r.mf, totalCam)}${novItem('M.Viejo', r.mviejo, totalCam)}
     </div>`;
     const tieneNov = [r.rojo,r.flacido,r.colort,r.enanos,r.desechos,r.vacios,r.mf,r.mviejo].some(v=>v&&v!='0');
-    const elimBtn = conBotonEliminar ? `<td><button class="btn-del" onclick="eliminarDelHistorial(${r.id})" title="Eliminar">✕</button></td>` : '';
+    const elimBtn = conBotonEliminar ? `<td><button class="btn-del" onclick="eliminarDelHistorial('${r._fsId}')" title="Eliminar">✕</button></td>` : '';
     return `<tr>
       <td><span class="num-badge">${i + 1}</span></td>
       <td><strong>${r.fecha}</strong></td>
@@ -995,12 +1049,13 @@ Responde SOLO con este JSON exacto:
   }
 
   function descargarCSV() {
-    if (excelRows.length === 0) { alert('No hay registros para descargar.'); return; }
+    const filas = window._registrosFS || [];
+    if (filas.length === 0) { alert('No hay registros para descargar.'); return; }
 
     const SEP = ';';
     const headers = ['FECHA','PISCINA','CAMARONERA','LANCES','TECNICO 1','TECNICO 2','TECNICO 3','RALEO','SOBREVIVENCIA %','TOTAL CAMARONES','CAM ROJO','FLACIDO','COLOR T','ENANOS','DESECHOS','VACIOS','MF','M VIEJO','BATIMETRIA','NIV COMPUERTA POB','NIV COMPUERTA MAX'];
 
-    const rows = excelRows.map(r => [
+    const rows = filas.map(r => [
       r.fecha, r.piscina, r.camaronera, r.lances,
       r.tec1, r.tec2, r.tec3, r.raleo,
       r.sobrevivencia, r.total,
@@ -1033,6 +1088,60 @@ Responde SOLO con este JSON exacto:
   function nuevaFoto() {
     limpiar();
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ---- Importar CSV ----
+  function importarCSV(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const text = e.target.result;
+      const lines = text.split('\n').filter(l => l.trim());
+      const dataLines = lines.filter(l =>
+        !l.startsWith('sep=') &&
+        !l.replace(/^\uFEFF/,'').startsWith('FECHA') &&
+        !l.startsWith('"FECHA"')
+      );
+      let importados = 0;
+      const hist = cargarHistorial();
+      dataLines.forEach(line => {
+        const cols = line.split(';').map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length < 8 || !cols[0]) return;
+        const sob = cols[8] ? cols[8].replace('%','').replace(',','.').trim() : '';
+        const row = {
+          id: Date.now() + importados + Math.random(),
+          fecha: cols[0] || '',
+          piscina: cols[1] || '',
+          camaronera: cols[2] || '',
+          lances: cols[3] || '',
+          tec1: cols[4] || '',
+          tec2: cols[5] || '',
+          tec3: cols[6] || '',
+          raleo: cols[7] || 'ANTES',
+          sobrevivencia: sob,
+          total: cols[9] ? cols[9].replace(',','.') : '',
+          rojo: cols[10] || '',
+          flacido: cols[11] || '',
+          colort: cols[12] || '',
+          enanos: cols[13] || '',
+          desechos: cols[14] || '',
+          vacios: cols[15] || '',
+          mf: cols[16] || '',
+          mviejo: cols[17] || '',
+          batimetria: cols[18] ? cols[18].replace(',','.') : '',
+          ncp: cols[19] ? cols[19].replace(',','.') : '',
+          ncm: cols[20] ? cols[20].replace(',','.') : '',
+        };
+        hist.push(row);
+        importados++;
+      });
+      guardarHistorial(hist);
+      renderHistorialPermanente();
+      alert('✓ ' + importados + ' registro(s) importados correctamente.');
+      event.target.value = '';
+    };
+    reader.readAsText(file, 'UTF-8');
   }
 
   renderHistorialPermanente();
