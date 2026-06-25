@@ -446,6 +446,8 @@
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('user-pill').style.display = 'flex';
     document.getElementById('user-label').textContent = nombre;
+    // Pedir permiso de notificaciones
+    pedirPermisoNotificaciones();
   }
   function cerrarSesion() {
     if (confirm('¿Cerrar sesión?')) {
@@ -501,6 +503,34 @@
     }
   }
 
+  // ---- Notificaciones Push ----
+  function pedirPermisoNotificaciones() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      setTimeout(() => {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') showToast('🔔 Notificaciones activadas');
+        });
+      }, 2000);
+    }
+  }
+
+  function enviarNotificacionPush(titulo, cuerpo) {
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    try {
+      const notif = new Notification(titulo, {
+        body: cuerpo,
+        icon: 'https://jose-u-a.github.io/poblacional/favicon.ico',
+        badge: 'https://jose-u-a.github.io/poblacional/favicon.ico',
+        tag: 'poblacional-nuevo-registro',
+        renotify: true
+      });
+      notif.onclick = () => { window.focus(); notif.close(); };
+      setTimeout(() => notif.close(), 8000);
+    } catch(e) { console.log('Notif error:', e); }
+  }
+
   // ---- Callback tiempo real ----
   let ultimoCount = 0;
   window.onRegistrosActualizados = function(registros) {
@@ -510,7 +540,9 @@
       const usuario = localStorage.getItem('poblacional_usuario') || '';
       const quien = nuevo.guardadoPor || '';
       if (quien && quien !== usuario) {
-        showToast(`🦐 ${quien} guardó piscina ${nuevo.piscina || '?'} — Sobrev: ${nuevo.sobrevivencia || '?'}%`);
+        const msg = `${quien} guardó Piscina ${nuevo.piscina||'?'} — Sobrev: ${nuevo.sobrevivencia||'?'}%`;
+        showToast(`🦐 ${msg}`);
+        enviarNotificacionPush('🦐 Nuevo registro Poblacional', msg);
       }
     }
     ultimoCount = registros.length;
@@ -913,3 +945,4 @@ Responde SOLO con este JSON:
 </script>
 </body>
 </html>
+
