@@ -583,7 +583,8 @@
         const h = Math.round((sob / Math.max(maxSob, 100)) * 100);
         const color = sob >= 60 ? '#1a6b3a' : sob >= 35 ? '#f5a623' : '#c0392b';
         return `<div class="chart-bar-group">
-          <div class="chart-bar" style="height:${Math.max(h,4)}px;background:${color};" data-val="${sob}%"></div>
+          <div style="font-size:10px;font-weight:700;color:${color};margin-bottom:2px;">${sob}%</div>
+          <div class="chart-bar" style="height:${Math.max(h,8)}px;background:${color};" data-val="${sob}%"></div>
           <div class="chart-label">P${p}</div>
         </div>`;
       }).join('');
@@ -945,4 +946,3 @@ Responde SOLO con este JSON:
 </script>
 </body>
 </html>
-
