@@ -697,9 +697,10 @@ GUÍA DE CAMPOS:
 - "promedio_batimetria": Promedio batimetría en cm. Ejemplo: "116.43"
 - "nivel_compuerta_poblacion": Nivel compuerta poblacional. Ejemplo: "260"
 - "nivel_compuerta_maximo": Nivel compuerta máximo. Ejemplo: "280"
+- "raleo": Momento del muestreo. Busca texto como "ANTES DEL RALEO", "ANTES DE RALEO", "DESPUES DEL RALEO", "DESPUÉS DEL RALEO", "POST RALEO". Si dice ANTES devuelve "ANTES", si dice DESPUES devuelve "DESPUES". Si no se ve claramente devuelve "ANTES".
 
 Responde SOLO con este JSON:
-{"fecha":"","piscina":"","camaronera":"","tecnico1":"","tecnico2":"","tecnico3":"","lances":"","sobrevivencia":"","total_camarones":"","camaron_rojo":"","flacido":"","color_t":"","enanos":"","desechos":"","vacios":"","mf_muerto_fresco":"","muerto_viejo":"","promedio_batimetria":"","nivel_compuerta_poblacion":"","nivel_compuerta_maximo":""}`;
+{"fecha":"","piscina":"","camaronera":"","tecnico1":"","tecnico2":"","tecnico3":"","lances":"","sobrevivencia":"","total_camarones":"","camaron_rojo":"","flacido":"","color_t":"","enanos":"","desechos":"","vacios":"","mf_muerto_fresco":"","muerto_viejo":"","promedio_batimetria":"","nivel_compuerta_poblacion":"","nivel_compuerta_maximo":"","raleo":""}`;
   }
 
   async function extractData(base64, mediaType) {
@@ -742,6 +743,12 @@ Responde SOLO con este JSON:
         'f-batimetria':parsed.promedio_batimetria,'f-ncp':parsed.nivel_compuerta_poblacion,'f-ncm':parsed.nivel_compuerta_maximo,
       };
       Object.entries(map).forEach(([id,val]) => { const el=document.getElementById(id); if(el){el.value=val||'';if(val)el.classList.add('auto-filled');} });
+
+      // Aplicar raleo detectado
+      if (parsed.raleo && (parsed.raleo.includes('ANTES') || parsed.raleo.includes('DESPUES') || parsed.raleo.includes('DESPUÉS'))) {
+        const raleoVal = parsed.raleo.includes('DESPUES') || parsed.raleo.includes('DESPUÉS') ? 'DESPUES' : 'ANTES';
+        setRaleo(raleoVal);
+      }
 
       const campos = Object.values(parsed).filter(v=>v&&v!=='').length;
       document.getElementById('fields-section').style.display = 'block';
